@@ -1,6 +1,7 @@
 package utils
 
 import (
+	db "PowerBook2.0/db/sqlc"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -13,7 +14,7 @@ import (
 var translations = make(map[string]map[string]string)
 
 func LoadTranslations() error {
-	langs := []string{"en", "ru", "kz"}
+	langs := []string{"ru", "kz"}
 	for _, lang := range langs {
 		filePath := fmt.Sprintf("utils/languages/%s.json", lang)
 		file, err := os.Open(filePath)
@@ -35,15 +36,15 @@ func LoadTranslations() error {
 func Translate(lang, key string) string {
 	messages, langExists := translations[lang]
 	if !langExists {
-		log.Printf("Language '%s' not found. Falling back to English.", lang)
-		messages = translations["en"]
+		log.Printf("Language '%s' not found. Falling back to Russian.", lang)
+		messages = translations["ru.json"]
 	}
 
 	// Check if the key exists in the language
 	message, keyExists := messages[key]
 	if !keyExists {
-		log.Printf("Key '%s' not found in language '%s'. Falling back to English.", key, lang)
-		message = translations["en"][key]
+		log.Printf("Key '%s' not found in language '%s'. Falling back to Russian.", key, lang)
+		message = translations["ru.json"][key]
 	}
 
 	// If the key is still missing in English, return the key itself
@@ -55,7 +56,7 @@ func Translate(lang, key string) string {
 	return message
 }
 
-func GetTranslation(ctx context.Context, queries *db.Queries, update tgbotapi.Update, key string) (error, string) {
+func GetTranslation(ctx context.Context, queries *db.Queries, update tgbotapi.Update, key string) (string, error) {
 	var userID int
 
 	if update.Message != nil {
@@ -70,5 +71,5 @@ func GetTranslation(ctx context.Context, queries *db.Queries, update tgbotapi.Up
 	}
 
 	message := Translate(lang.String, key)
-	return nil, message
+	return message, nil
 }

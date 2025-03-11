@@ -9,6 +9,7 @@ import (
 var BotToken string
 var DBDriver string
 var DBSource string
+var AdminID string
 var TableURL string
 var GoogleApi string
 var GoogleCredentials string
@@ -25,4 +26,5 @@ func LoadConfig() {
 	TableURL = os.Getenv("TABLE_URL")
 	GoogleApi = os.Getenv("GOOGLE_API")
 	GoogleCredentials = os.Getenv("GOOGLE_CREDENTIALS")
+	AdminID = os.Getenv("ADMIN_ID")
 }

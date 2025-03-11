@@ -7,13 +7,43 @@ package db
 
 import (
 	"context"
+	"database/sql"
 )
 
-const enable_bot_registration = `-- name: enable_bot_registration :exec
-update bot_settings set regsitration = true where id > 0
+const createBot = `-- name: CreateBot :exec
+insert into bot_settings (id) select 1 where not exists (select 1 from bot_settings)
 `
 
-func (q *Queries) enable_bot_registration(ctx context.Context) error {
+func (q *Queries) CreateBot(ctx context.Context) error {
+	_, err := q.db.ExecContext(ctx, createBot)
+	return err
+}
+
+const diasble_bot_registration = `-- name: Diasble_bot_registration :exec
+update bot_settings set registration = false where registration = true
+`
+
+func (q *Queries) Diasble_bot_registration(ctx context.Context) error {
+	_, err := q.db.ExecContext(ctx, diasble_bot_registration)
+	return err
+}
+
+const enable_bot_registration = `-- name: Enable_bot_registration :exec
+update bot_settings set registration = true where registration = false
+`
+
+func (q *Queries) Enable_bot_registration(ctx context.Context) error {
 	_, err := q.db.ExecContext(ctx, enable_bot_registration)
 	return err
+}
+
+const getbot = `-- name: Getbot :one
+select registration from bot_settings where id = 1
+`
+
+func (q *Queries) Getbot(ctx context.Context) (sql.NullBool, error) {
+	row := q.db.QueryRowContext(ctx, getbot)
+	var registration sql.NullBool
+	err := row.Scan(&registration)
+	return registration, err
 }
