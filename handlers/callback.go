@@ -147,6 +147,14 @@ func handleCallback(command string, queries *db.Queries, updates tgbotapi.Update
 				log.Println(err)
 			}
 		}
+	case strings.HasPrefix(command, "calendar"):
+		trimmed := strings.TrimPrefix(command, "calendar_")
+		parts := strings.Split(trimmed, "_")
+		year, _ := strconv.Atoi(parts[0])
+		month, _ := strconv.Atoi(parts[1])
+		messageID := updates.CallbackQuery.Message.MessageID
+
+		sendCalendar(year, month, queries, updates, bot, chatid, userid, true, messageID)
 	}
 }
 
@@ -158,5 +166,43 @@ func removeInlineButtons(bot *tgbotapi.BotAPI, chatID int64, messageID int) {
 	_, err := bot.Send(removeKeyboard)
 	if err != nil {
 		log.Println("Ошибка при удалении кнопок:", err)
+	}
+}
+
+func sendCalendar(year int, month int, queries *db.Queries, updates tgbotapi.Update, bot *tgbotapi.BotAPI, chatid int64, userid int64, isEdit bool, messageID int) {
+	ctx := context.Background()
+
+	readLogs, err := queries.GetReadingLogsByUser(ctx, strconv.FormatInt(userid, 10))
+	if err != nil {
+		log.Println(err.Error())
+	}
+
+	readMinutes := make(map[int]int)
+
+	for _, log := range readLogs {
+		if int(log.Date.Month()) == int(month) && log.Date.Year() == year {
+			day := log.Date.Day()
+			readMinutes[day] = int(log.MinutesRead)
+		}
+	}
+
+	key := "experience_1"
+	text, err := utils.GetTranslation(ctx, queries, updates, key)
+	if err != nil {
+		log.Println(err)
+	}
+
+	inline := utils.InlineCalendarKeyboard(year, int(month), readMinutes)
+
+	if isEdit {
+		editMsg := tgbotapi.NewEditMessageText(chatid, messageID, text)
+		editMsg.ReplyMarkup = &inline
+		editMsg.ParseMode = "HTML"
+		bot.Send(editMsg)
+	} else {
+		msg := tgbotapi.NewMessage(chatid, text)
+		msg.ReplyMarkup = inline
+		msg.ParseMode = "HTML"
+		bot.Send(msg)
 	}
 }

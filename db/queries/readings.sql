@@ -10,8 +10,6 @@ UPDATE reading_logs
 SET minutes_read = $2
 WHERE userid = $1;
 
-
-
 -- name: GetReadingLogsByUser :many
 SELECT date, minutes_read
 FROM reading_logs
