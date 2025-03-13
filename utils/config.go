@@ -12,8 +12,8 @@ var DBSource string
 var AdminID string
 var RegisterChatID string
 var TableURL string
-var GoogleApi string
-var GoogleCredentials string
+var SheetID string
+var Creds string
 
 func LoadConfig() {
 	err := godotenv.Load()
@@ -25,8 +25,8 @@ func LoadConfig() {
 	DBDriver = os.Getenv("DB_DRIVER")
 	DBSource = os.Getenv("DB_SOURCE")
 	TableURL = os.Getenv("TABLE_URL")
-	GoogleApi = os.Getenv("GOOGLE_API")
-	GoogleCredentials = os.Getenv("GOOGLE_CREDENTIALS")
+	SheetID = os.Getenv("GOOGLE_API")
+	Creds = os.Getenv("GOOGLE_CREDENTIALS")
 	AdminID = os.Getenv("ADMIN_ID")
 	RegisterChatID = os.Getenv("REGISTER_CHAT_ID")
 }

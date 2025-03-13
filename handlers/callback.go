@@ -92,6 +92,10 @@ func handleCallback(command string, queries *db.Queries, updates tgbotapi.Update
 			if err != nil {
 				log.Println(err)
 			}
+			//sheets
+			if err := utils.AddUserToSheet(utils.SheetID, strconv.FormatInt(userid, 10), updates.CallbackQuery.From.UserName); err != nil {
+				log.Fatalf("Error adding user to sheet: %v", err)
+			}
 
 			//todo: Send the instructions of the bot
 			key = "start_2"

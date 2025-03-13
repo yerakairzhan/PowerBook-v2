@@ -74,7 +74,10 @@ func handleMessage(message string, queries *db.Queries, updates tgbotapi.Update,
 			log.Println(err.Error())
 		}
 		//todo: save in sheets
-
+		err = utils.AddReadingMinutes(utils.SheetID, strconv.FormatInt(userid, 10), minutes)
+		if err != nil {
+			log.Println(err.Error())
+		}
 		//todo: say to
 	}
 }
