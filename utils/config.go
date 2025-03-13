@@ -10,6 +10,7 @@ var BotToken string
 var DBDriver string
 var DBSource string
 var AdminID string
+var RegisterChatID string
 var TableURL string
 var GoogleApi string
 var GoogleCredentials string
@@ -27,4 +28,5 @@ func LoadConfig() {
 	GoogleApi = os.Getenv("GOOGLE_API")
 	GoogleCredentials = os.Getenv("GOOGLE_CREDENTIALS")
 	AdminID = os.Getenv("ADMIN_ID")
+	RegisterChatID = os.Getenv("REGISTER_CHAT_ID")
 }

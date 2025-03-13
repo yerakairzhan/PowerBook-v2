@@ -27,12 +27,17 @@ func SetupHandlers(bot *tgbotapi.BotAPI, queries *db.Queries) {
 				userID = update.CallbackQuery.From.ID
 				command = update.CallbackQuery.Data
 
+				handleCallback(command, queries, update, bot, chatID, userID)
+
 			} else if update.Message != nil {
 				chatID = update.Message.Chat.ID
 				userID = update.Message.From.ID
 				if update.Message.IsCommand() {
 					command = update.Message.Command()
 					handleCommand(command, queries, update, bot, chatID, userID)
+				} else {
+					message := update.Message.Text
+					handleMessage(message, queries, update, bot, chatID, userID)
 				}
 			} else {
 				continue
@@ -72,6 +77,5 @@ func IsBotWorking(queries *db.Queries, updates tgbotapi.Update) bool {
 			userReged.Bool = false
 		}
 	}
-	log.Println(reged.Bool, userReged.Bool)
 	return reged.Bool || userReged.Bool
 }

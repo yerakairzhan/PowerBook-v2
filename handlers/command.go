@@ -14,25 +14,33 @@ func handleCommand(command string, queries *db.Queries, updates tgbotapi.Update,
 	username := updates.Message.From.UserName
 	switch command {
 	case "start":
-		// User created for the first time in DataBase
+		//todo: User created for the first time in DataBase
 		arg := db.CreateUserParams{Userid: strconv.FormatInt(userid, 10), Username: username}
 		err := queries.CreateUser(ctx, arg)
 		if err != nil {
 			log.Println(err)
 		}
 
-		// Message on start
-		key := "start_1"
-		text, err := utils.GetTranslation(ctx, queries, updates, key)
-		if err != nil {
-			log.Println(err)
-		}
-		msg := tgbotapi.NewMessage(chatid, updates.Message.From.FirstName+text)
-		msg.ParseMode = "HTML"
+		//todo: ask for a language
+		msg := tgbotapi.NewMessage(chatid, "Выберите язык / Тілді таңдаңыз")
+		msg.ReplyMarkup = utils.InlineLang()
 		_, err = bot.Send(msg)
 		if err != nil {
 			log.Println(err)
 		}
+
+		//todo: Message on start
+		//key = "start_1"
+		//text, err = utils.GetTranslation(ctx, queries, updates, key)
+		//if err != nil {
+		//	log.Println(err)
+		//}
+		//msg = tgbotapi.NewMessage(chatid, updates.Message.From.FirstName+text)
+		//msg.ParseMode = "HTML"
+		//_, err = bot.Send(msg)
+		//if err != nil {
+		//	log.Println(err)
+		//}
 
 	case "startorendbot":
 		reged, err := queries.Getbot(ctx)
@@ -43,6 +51,20 @@ func handleCommand(command string, queries *db.Queries, updates tgbotapi.Update,
 			queries.Diasble_bot_registration(ctx)
 		} else {
 			queries.Enable_bot_registration(ctx)
+		}
+
+	case "menu":
+		key := "menu_1"
+		text, err := utils.GetTranslation(ctx, queries, updates, key)
+		if err != nil {
+			log.Println(err)
+		}
+		msg := tgbotapi.NewMessage(chatid, text)
+		msg.ParseMode = "HTML"
+		msg.ReplyMarkup = utils.InlineMenu()
+		_, err = bot.Send(msg)
+		if err != nil {
+			log.Println(err)
 		}
 	}
 }
