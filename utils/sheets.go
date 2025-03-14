@@ -103,8 +103,7 @@ func AddUserToSheet(spreadsheetId, userID, username string) error {
 
 //////
 
-func AddReadingMinutes(spreadsheetId, userID string, minutes int) error {
-	currentTime := time.Now()
+func AddReadingMinutes(spreadsheetId, userID string, minutes int, currentTime time.Time) error {
 	sheetName := GetSheetname(currentTime)
 
 	LoadConfig()
@@ -134,7 +133,7 @@ func AddReadingMinutes(spreadsheetId, userID string, minutes int) error {
 	}
 
 	// Find the current date column
-	currentDate := time.Now().Format("2.01") // e.g., 06-08-2024
+	currentDate := currentTime.Format("2.01") // e.g., 06-08-2024
 	dateColumnIndex := -1
 
 	if len(resp.Values) > 0 {

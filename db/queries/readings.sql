@@ -8,7 +8,7 @@ VALUES (
 -- name: UpdateReadingLog :exec
 UPDATE reading_logs
 SET minutes_read = $2
-WHERE userid = $1;
+WHERE userid = $1 and date = $3;
 
 -- name: GetReadingLogsByUser :many
 SELECT date, minutes_read

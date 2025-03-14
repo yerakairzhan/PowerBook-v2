@@ -17,6 +17,26 @@ func handleCallback(command string, queries *db.Queries, updates tgbotapi.Update
 	ctx := context.Background()
 	log.Println("callback: ", command)
 	switch {
+	case command == "back":
+		key := "menu_1"
+		text, err := utils.GetTranslation(ctx, queries, updates, key)
+		if err != nil {
+			log.Println(err)
+		}
+		callback := updates.CallbackQuery
+		inlineKeyboard := utils.InlineMenu()
+		editMsg := tgbotapi.NewEditMessageTextAndMarkup(
+			callback.Message.Chat.ID,
+			callback.Message.MessageID,
+			text,
+			inlineKeyboard,
+		)
+		editMsg.ParseMode = "HTML"
+		_, err = bot.Send(editMsg)
+		if err != nil {
+			log.Println("Ошибка при изменении сообщения:", err)
+		}
+
 	case strings.HasPrefix(command, "lang"):
 		var lang sql.NullString
 		lang.String = strings.TrimPrefix(command, "lang_")
@@ -42,6 +62,7 @@ func handleCallback(command string, queries *db.Queries, updates tgbotapi.Update
 			callback.From.FirstName+text,
 			inlineKeyboard,
 		)
+		editMsg.ParseMode = "HTML"
 
 		_, err = bot.Send(editMsg)
 		if err != nil {
@@ -83,6 +104,7 @@ func handleCallback(command string, queries *db.Queries, updates tgbotapi.Update
 				log.Println(err)
 			}
 			msg := tgbotapi.NewMessage(chatID, text)
+			msg.ParseMode = "HTML"
 			_, err = bot.Send(msg)
 			if err != nil {
 				log.Println(err)
@@ -105,6 +127,7 @@ func handleCallback(command string, queries *db.Queries, updates tgbotapi.Update
 				log.Println(err)
 			}
 			msg = tgbotapi.NewMessage(chatID, text)
+			msg.ParseMode = "HTML"
 
 			_, err = bot.Send(msg)
 			if err != nil {
@@ -166,14 +189,20 @@ func handleCallback(command string, queries *db.Queries, updates tgbotapi.Update
 			if err != nil {
 				log.Println(err)
 			}
-			msg := tgbotapi.NewMessage(chatid, text)
+			callback := updates.CallbackQuery.Message.MessageID
+			msg := tgbotapi.NewEditMessageTextAndMarkup(
+				chatid,
+				callback,
+				text,
+				inline,
+			)
 			msg.ParseMode = "HTML"
-			msg.ReplyMarkup = inline
 			_, err = bot.Send(msg)
 			if err != nil {
 				log.Println(err)
 			}
 		}
+
 	case strings.HasPrefix(command, "calendar"):
 		trimmed := strings.TrimPrefix(command, "calendar_")
 		parts := strings.Split(trimmed, "_")
@@ -181,7 +210,16 @@ func handleCallback(command string, queries *db.Queries, updates tgbotapi.Update
 		month, _ := strconv.Atoi(parts[1])
 		messageID := updates.CallbackQuery.Message.MessageID
 
-		sendCalendar(year, month, queries, updates, bot, chatid, userid, true, messageID)
+		sendCalendar(true, year, month, queries, updates, bot, chatid, userid, true, messageID)
+
+	case strings.HasPrefix(command, "back_"):
+		trimmed := strings.TrimPrefix(command, "back_")
+		parts := strings.Split(trimmed, "_")
+		year, _ := strconv.Atoi(parts[0])
+		month, _ := strconv.Atoi(parts[1])
+		messageID := updates.CallbackQuery.Message.MessageID
+
+		sendCalendar(false, year, month, queries, updates, bot, chatid, userid, true, messageID)
 
 	case strings.HasPrefix(command, "day"):
 		var text string
@@ -201,8 +239,35 @@ func handleCallback(command string, queries *db.Queries, updates tgbotapi.Update
 		callbackQueryID := updates.CallbackQuery.ID
 		callback := tgbotapi.NewCallback(callbackQueryID, output)
 		bot.Request(callback)
-	}
 
+	case strings.HasPrefix(command, "change"): // change_17.4.2025
+		var state sql.NullString
+		state.Valid = true
+		state.String = "change_read_" + command
+		arg := db.SetUserStateParams{
+			Userid: strconv.FormatInt(userid, 10),
+			State:  state,
+		}
+		err := queries.SetUserState(ctx, arg)
+		if err != nil {
+			log.Println(err)
+		}
+		key := "change_1"
+		text, err := utils.GetTranslation(ctx, queries, updates, key)
+		if err != nil {
+			log.Println(err)
+		}
+		msg := tgbotapi.NewMessage(chatid, text)
+		msg.ParseMode = "HTML"
+		sent, err := bot.Send(msg)
+		if err != nil {
+			log.Println(err)
+		}
+
+		deleteMsg := tgbotapi.NewDeleteMessage(chatid, sent.MessageID)
+		time.Sleep(3 * time.Second)
+		bot.Request(deleteMsg)
+	}
 }
 
 func removeInlineButtons(bot *tgbotapi.BotAPI, chatID int64, messageID int) {
@@ -216,7 +281,7 @@ func removeInlineButtons(bot *tgbotapi.BotAPI, chatID int64, messageID int) {
 	}
 }
 
-func sendCalendar(year int, month int, queries *db.Queries, updates tgbotapi.Update, bot *tgbotapi.BotAPI, chatid int64, userid int64, isEdit bool, messageID int) {
+func sendCalendar(simple_calendar bool, year int, month int, queries *db.Queries, updates tgbotapi.Update, bot *tgbotapi.BotAPI, chatid int64, userid int64, isEdit bool, messageID int) {
 	if month < 0 {
 		month += 12
 		year--
@@ -239,13 +304,17 @@ func sendCalendar(year int, month int, queries *db.Queries, updates tgbotapi.Upd
 			readMinutes[day] = int(log.MinutesRead)
 		}
 	}
-	key := "experience_1"
+	key := "changer_1"
 	text, err := utils.GetTranslation(ctx, queries, updates, key)
 	if err != nil {
 		log.Println(err)
 	}
-
-	inline := utils.InlineCalendarKeyboard(year, int(month), readMinutes)
+	var inline tgbotapi.InlineKeyboardMarkup
+	if simple_calendar {
+		inline = utils.InlineCalendarKeyboard(year, int(month), readMinutes)
+	} else {
+		inline = utils.InlineCalendarChanger(year, int(month), readMinutes)
+	}
 
 	if isEdit {
 		editMsg := tgbotapi.NewEditMessageText(chatid, messageID, text)

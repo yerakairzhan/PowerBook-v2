@@ -131,15 +131,16 @@ func (q *Queries) GetSumReading(ctx context.Context, userid string) (GetSumReadi
 const updateReadingLog = `-- name: UpdateReadingLog :exec
 UPDATE reading_logs
 SET minutes_read = $2
-WHERE userid = $1
+WHERE userid = $1 and date = $3
 `
 
 type UpdateReadingLogParams struct {
-	Userid      string `json:"userid"`
-	MinutesRead int32  `json:"minutes_read"`
+	Userid      string    `json:"userid"`
+	MinutesRead int32     `json:"minutes_read"`
+	Date        time.Time `json:"date"`
 }
 
 func (q *Queries) UpdateReadingLog(ctx context.Context, arg UpdateReadingLogParams) error {
-	_, err := q.db.ExecContext(ctx, updateReadingLog, arg.Userid, arg.MinutesRead)
+	_, err := q.db.ExecContext(ctx, updateReadingLog, arg.Userid, arg.MinutesRead, arg.Date)
 	return err
 }
