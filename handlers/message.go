@@ -78,6 +78,17 @@ func handleMessage(message string, queries *db.Queries, updates tgbotapi.Update,
 		if err != nil {
 			log.Println(err.Error())
 		}
+		key := "read_3"
+		text, err := utils.GetTranslation(ctx, queries, updates, key)
+		if err != nil {
+			log.Println(err.Error())
+		}
+		msg := tgbotapi.NewMessage(chatid, text)
+		msg.ParseMode = "html"
+		_, err = bot.Send(msg)
+		if err != nil {
+			log.Println(err.Error())
+		}
 		//todo: say to
 	}
 }

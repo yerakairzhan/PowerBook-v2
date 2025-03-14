@@ -1,6 +1,7 @@
 package utils
 
 import (
+	db "PowerBook2.0/db/sqlc"
 	"fmt"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"strconv"
@@ -68,7 +69,7 @@ func InlineMenu() tgbotapi.InlineKeyboardMarkup {
 
 func InlineCalendarKeyboard(year int, month int, readMinutes map[int]int) tgbotapi.InlineKeyboardMarkup {
 	daysOfWeek := []string{"Mo", "Tu", "We", "Th", "Fr", "Sa", "Su"}
-	months := []string{"January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"}
+	months := []string{"December", "January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November"}
 	var keyboard [][]tgbotapi.InlineKeyboardButton
 	var weekRow []tgbotapi.InlineKeyboardButton
 
@@ -119,5 +120,45 @@ func InlineCalendarKeyboard(year int, month int, readMinutes map[int]int) tgbota
 	}
 	keyboard = append(keyboard, navRow)
 
+	return tgbotapi.InlineKeyboardMarkup{InlineKeyboard: keyboard}
+}
+
+func InlineLeaderboard(items []db.GetReadingLeaderboardRow, usersMax db.GetSumReadingRow) tgbotapi.InlineKeyboardMarkup {
+	var keyboard [][]tgbotapi.InlineKeyboardButton
+	inTop := false
+
+	for i := 0; i < len(items); i++ {
+		if items[i].Userid == usersMax.Userid {
+			inTop = true
+		}
+		var emoji string
+		if i == 0 {
+			emoji = "🥇"
+		} else if i == 1 {
+			emoji = "🥈"
+		} else if i == 2 {
+			emoji = "🥉"
+		} else if i == 3 {
+			emoji = "4️⃣"
+		} else if i == 4 {
+			emoji = "5️⃣"
+		}
+
+		navRow := []tgbotapi.InlineKeyboardButton{
+			tgbotapi.NewInlineKeyboardButtonData(emoji, "ignore"),
+			tgbotapi.NewInlineKeyboardButtonData("@"+items[i].Username, "ignore"),
+			tgbotapi.NewInlineKeyboardButtonData(fmt.Sprintf("%d мин.", items[i].TotalMinutes), "ignore"),
+		}
+		keyboard = append(keyboard, navRow)
+	}
+	if !inTop {
+		navRow := []tgbotapi.InlineKeyboardButton{
+			tgbotapi.NewInlineKeyboardButtonData("🫵", "ignore"),
+			tgbotapi.NewInlineKeyboardButtonData("@"+usersMax.Username, "ignore"),
+			tgbotapi.NewInlineKeyboardButtonData(fmt.Sprintf("%d мин.", usersMax.Sum), "ignore"),
+		}
+		keyboard = append(keyboard, navRow)
+	}
+	keyboard = append(keyboard, tgbotapi.NewInlineKeyboardRow(tgbotapi.NewInlineKeyboardButtonData("➡️", "ignore")))
 	return tgbotapi.InlineKeyboardMarkup{InlineKeyboard: keyboard}
 }

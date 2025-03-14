@@ -5,6 +5,7 @@ import (
 	"PowerBook2.0/utils"
 	"context"
 	"database/sql"
+	"fmt"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"log"
 	"strconv"
@@ -150,6 +151,28 @@ func handleCallback(command string, queries *db.Queries, updates tgbotapi.Update
 			if err != nil {
 				log.Println(err)
 			}
+		} else if command == "standings" {
+			leaderboard, err := queries.GetReadingLeaderboard(ctx)
+			YourMax, err := queries.GetSumReading(ctx, strconv.FormatInt(userid, 10))
+			if err != nil {
+				log.Println(err)
+			}
+			if err != nil {
+				log.Fatal("Error getting leaderboard:", err)
+			}
+			inline := utils.InlineLeaderboard(leaderboard, YourMax)
+			key := "standings_1"
+			text, err := utils.GetTranslation(ctx, queries, updates, key)
+			if err != nil {
+				log.Println(err)
+			}
+			msg := tgbotapi.NewMessage(chatid, text)
+			msg.ParseMode = "HTML"
+			msg.ReplyMarkup = inline
+			_, err = bot.Send(msg)
+			if err != nil {
+				log.Println(err)
+			}
 		}
 	case strings.HasPrefix(command, "calendar"):
 		trimmed := strings.TrimPrefix(command, "calendar_")
@@ -159,7 +182,27 @@ func handleCallback(command string, queries *db.Queries, updates tgbotapi.Update
 		messageID := updates.CallbackQuery.Message.MessageID
 
 		sendCalendar(year, month, queries, updates, bot, chatid, userid, true, messageID)
+
+	case strings.HasPrefix(command, "day"):
+		var text string
+		_, err := fmt.Sscanf(command, "day_%v", &text)
+		if err != nil {
+			log.Println("Error parsing command:", err, "Command:", command)
+			return
+		}
+
+		parts := strings.Split(text, ".")
+
+		if len(parts) > 1 && parts[1] == "0" {
+			parts[1] = "12"
+		}
+
+		output := strings.Join(parts, ".")
+		callbackQueryID := updates.CallbackQuery.ID
+		callback := tgbotapi.NewCallback(callbackQueryID, output)
+		bot.Request(callback)
 	}
+
 }
 
 func removeInlineButtons(bot *tgbotapi.BotAPI, chatID int64, messageID int) {
@@ -174,8 +217,15 @@ func removeInlineButtons(bot *tgbotapi.BotAPI, chatID int64, messageID int) {
 }
 
 func sendCalendar(year int, month int, queries *db.Queries, updates tgbotapi.Update, bot *tgbotapi.BotAPI, chatid int64, userid int64, isEdit bool, messageID int) {
-	ctx := context.Background()
+	if month < 0 {
+		month += 12
+		year--
+	} else if month >= 12 {
+		month -= 12
+		year++
+	}
 
+	ctx := context.Background()
 	readLogs, err := queries.GetReadingLogsByUser(ctx, strconv.FormatInt(userid, 10))
 	if err != nil {
 		log.Println(err.Error())
@@ -189,7 +239,6 @@ func sendCalendar(year int, month int, queries *db.Queries, updates tgbotapi.Upd
 			readMinutes[day] = int(log.MinutesRead)
 		}
 	}
-
 	key := "experience_1"
 	text, err := utils.GetTranslation(ctx, queries, updates, key)
 	if err != nil {
@@ -202,11 +251,17 @@ func sendCalendar(year int, month int, queries *db.Queries, updates tgbotapi.Upd
 		editMsg := tgbotapi.NewEditMessageText(chatid, messageID, text)
 		editMsg.ReplyMarkup = &inline
 		editMsg.ParseMode = "HTML"
-		bot.Send(editMsg)
+		_, err := bot.Send(editMsg)
+		if err != nil {
+			log.Println(err)
+		}
 	} else {
 		msg := tgbotapi.NewMessage(chatid, text)
 		msg.ReplyMarkup = inline
 		msg.ParseMode = "HTML"
-		bot.Send(msg)
+		_, err := bot.Send(msg)
+		if err != nil {
+			log.Println(err)
+		}
 	}
 }

@@ -34,6 +34,48 @@ func (q *Queries) CreateReadingLog(ctx context.Context, arg CreateReadingLogPara
 	return err
 }
 
+const getReadingLeaderboard = `-- name: GetReadingLeaderboard :many
+SELECT
+    r.userid,
+    u.username,
+    SUM(r.minutes_read) AS total_minutes
+FROM reading_logs r
+         JOIN users u ON r.userid = u.userid
+WHERE r.date >= CURRENT_DATE - INTERVAL '7 days'
+GROUP BY r.userid, u.username
+ORDER BY total_minutes DESC
+    LIMIT 5
+`
+
+type GetReadingLeaderboardRow struct {
+	Userid       string `json:"userid"`
+	Username     string `json:"username"`
+	TotalMinutes int64  `json:"total_minutes"`
+}
+
+func (q *Queries) GetReadingLeaderboard(ctx context.Context) ([]GetReadingLeaderboardRow, error) {
+	rows, err := q.db.QueryContext(ctx, getReadingLeaderboard)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []GetReadingLeaderboardRow
+	for rows.Next() {
+		var i GetReadingLeaderboardRow
+		if err := rows.Scan(&i.Userid, &i.Username, &i.TotalMinutes); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const getReadingLogsByUser = `-- name: GetReadingLogsByUser :many
 SELECT date, minutes_read
 FROM reading_logs
@@ -69,168 +111,21 @@ func (q *Queries) GetReadingLogsByUser(ctx context.Context, userid string) ([]Ge
 	return items, nil
 }
 
-const getTopReaders = `-- name: GetTopReaders :many
-SELECT u.username, SUM(rl.minutes_read) AS total_minutes
-FROM users u
-         JOIN reading_logs rl ON u.userid = rl.userid
-GROUP BY u.username
-ORDER BY total_minutes DESC
-    LIMIT 3
+const getSumReading = `-- name: GetSumReading :one
+select sum(minutes_read) as Sum, username, userid from reading_logs where userid = $1 group by userid, username
 `
 
-type GetTopReadersRow struct {
-	Username     string `json:"username"`
-	TotalMinutes int64  `json:"total_minutes"`
+type GetSumReadingRow struct {
+	Sum      int64  `json:"sum"`
+	Username string `json:"username"`
+	Userid   string `json:"userid"`
 }
 
-func (q *Queries) GetTopReaders(ctx context.Context) ([]GetTopReadersRow, error) {
-	rows, err := q.db.QueryContext(ctx, getTopReaders)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	var items []GetTopReadersRow
-	for rows.Next() {
-		var i GetTopReadersRow
-		if err := rows.Scan(&i.Username, &i.TotalMinutes); err != nil {
-			return nil, err
-		}
-		items = append(items, i)
-	}
-	if err := rows.Close(); err != nil {
-		return nil, err
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return items, nil
-}
-
-const getTopReadersThisMonth = `-- name: GetTopReadersThisMonth :many
-SELECT u.username, SUM(rl.minutes_read) AS total_minutes
-FROM users u
-         JOIN reading_logs rl ON u.userid = rl.userid
-WHERE rl.date >= date_trunc('month', CURRENT_DATE)  -- Start of the current month
-  AND rl.date < date_trunc('month', CURRENT_DATE + INTERVAL '1 month')  -- Start of next month
-GROUP BY u.username
-ORDER BY total_minutes DESC
-    LIMIT 3
-`
-
-type GetTopReadersThisMonthRow struct {
-	Username     string `json:"username"`
-	TotalMinutes int64  `json:"total_minutes"`
-}
-
-func (q *Queries) GetTopReadersThisMonth(ctx context.Context) ([]GetTopReadersThisMonthRow, error) {
-	rows, err := q.db.QueryContext(ctx, getTopReadersThisMonth)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	var items []GetTopReadersThisMonthRow
-	for rows.Next() {
-		var i GetTopReadersThisMonthRow
-		if err := rows.Scan(&i.Username, &i.TotalMinutes); err != nil {
-			return nil, err
-		}
-		items = append(items, i)
-	}
-	if err := rows.Close(); err != nil {
-		return nil, err
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return items, nil
-}
-
-const getTopStreaks = `-- name: GetTopStreaks :many
-WITH consecutive_days AS (
-    SELECT
-        rl.userid,
-        rl.date,
-        ROW_NUMBER() OVER (PARTITION BY rl.userid ORDER BY rl.date)
-            - EXTRACT(DAY FROM rl.date)::INT AS streak_group
-    FROM reading_logs rl
-),
-     streaks AS (
-         SELECT
-             u.username,
-             COUNT(*) AS streak_length,
-             MAX(date) AS last_date
-         FROM consecutive_days cd
-                  JOIN users u ON cd.userid = u.userid
-         GROUP BY u.username, streak_group
-     )
-SELECT
-    username,
-    streak_length
-FROM streaks
-WHERE last_date = CURRENT_DATE  -- Ensure the streak continues up to today
-ORDER BY streak_length DESC
-    LIMIT 3
-`
-
-type GetTopStreaksRow struct {
-	Username     string `json:"username"`
-	StreakLength int64  `json:"streak_length"`
-}
-
-func (q *Queries) GetTopStreaks(ctx context.Context) ([]GetTopStreaksRow, error) {
-	rows, err := q.db.QueryContext(ctx, getTopStreaks)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	var items []GetTopStreaksRow
-	for rows.Next() {
-		var i GetTopStreaksRow
-		if err := rows.Scan(&i.Username, &i.StreakLength); err != nil {
-			return nil, err
-		}
-		items = append(items, i)
-	}
-	if err := rows.Close(); err != nil {
-		return nil, err
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return items, nil
-}
-
-const getUserTopStreak = `-- name: GetUserTopStreak :one
-WITH consecutive_days AS (
-    SELECT
-        rl.userid,
-        rl.date,
-        ROW_NUMBER() OVER (PARTITION BY rl.userid ORDER BY rl.date)
-            - EXTRACT(DAY FROM rl.date)::INT AS streak_group
-    FROM reading_logs rl
-    WHERE rl.userid = $1
-),
-     streaks AS (
-         SELECT
-             COUNT(*) AS streak_length,
-             MAX(date) AS last_date
-         FROM consecutive_days
-         GROUP BY streak_group
-     )
-SELECT
-    CASE
-        WHEN MAX(streak_length) IS NULL THEN '0'
-        ELSE CAST(MAX(streak_length) AS TEXT)
-        END AS top_streak
-FROM streaks
-WHERE last_date = CURRENT_DATE
-`
-
-func (q *Queries) GetUserTopStreak(ctx context.Context, userid string) (string, error) {
-	row := q.db.QueryRowContext(ctx, getUserTopStreak, userid)
-	var top_streak string
-	err := row.Scan(&top_streak)
-	return top_streak, err
+func (q *Queries) GetSumReading(ctx context.Context, userid string) (GetSumReadingRow, error) {
+	row := q.db.QueryRowContext(ctx, getSumReading, userid)
+	var i GetSumReadingRow
+	err := row.Scan(&i.Sum, &i.Username, &i.Userid)
+	return i, err
 }
 
 const updateReadingLog = `-- name: UpdateReadingLog :exec
