@@ -1,2 +1,2 @@
-.env
+.env.example
 utils/credentials.json
