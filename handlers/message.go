@@ -80,7 +80,14 @@ func handleMessage(message string, queries *db.Queries, updates tgbotapi.Update,
 		if err != nil {
 			log.Println(err.Error())
 		}
-		key := "read_3"
+
+		var key string
+		if minutes > 29 {
+			key = "read_3"
+		} else {
+			key = "read_4"
+		}
+
 		text, err := utils.GetTranslation(ctx, queries, updates, key)
 		if err != nil {
 			log.Println(err.Error())
@@ -239,6 +246,22 @@ func handleMessage(message string, queries *db.Queries, updates tgbotapi.Update,
 		if err != nil {
 			log.Println("Ошибка удаления сообщения пользователя:", err)
 		}
+	} else if state.String == "admin_write" {
+		users, err := queries.GetRegisteredUsers(ctx)
+		if err != nil {
+			log.Println(err)
+		}
+
+		for _, user := range users {
+			chatID, err := strconv.ParseInt(user.Userid, 10, 64)
+			if err != nil {
+				log.Println(err.Error())
+			}
+			msg := tgbotapi.NewMessage(chatID, message)
+			bot.Send(msg)
+		}
+
+		queries.DeleteUserState(ctx, strconv.FormatInt(userid, 10))
 	}
 }
 

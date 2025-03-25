@@ -4,6 +4,7 @@ import (
 	db "PowerBook2.0/db/sqlc"
 	"PowerBook2.0/utils"
 	"context"
+	"database/sql"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"log"
 	"strconv"
@@ -66,5 +67,21 @@ func handleCommand(command string, queries *db.Queries, updates tgbotapi.Update,
 		if err != nil {
 			log.Println(err)
 		}
+	}
+}
+
+func handleCommandAdmin(command string, queries *db.Queries, updates tgbotapi.Update, bot *tgbotapi.BotAPI, chatid int64, userid int64) {
+	ctx := context.Background()
+
+	switch command {
+	case "write":
+		msg := tgbotapi.NewMessage(chatid, "Напишите в следующем сообщении текст и он будет выслан всем пользователям!")
+		bot.Send(msg)
+
+		var state sql.NullString
+		state.Valid = true
+		state.String = "admin_write"
+		arg := db.SetUserStateParams{State: state, Userid: strconv.FormatInt(userid, 10)}
+		queries.SetUserState(ctx, arg)
 	}
 }

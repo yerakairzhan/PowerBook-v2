@@ -38,19 +38,21 @@ const getReadingLeaderboard = `-- name: GetReadingLeaderboard :many
 SELECT
     r.userid,
     u.username,
-    SUM(r.minutes_read) AS total_minutes
+    SUM(r.minutes_read) AS total_minutes,
+    COUNT(DISTINCT CASE WHEN r.minutes_read > 30 THEN r.date END) AS days_read_more_than_30
 FROM reading_logs r
          JOIN users u ON r.userid = u.userid
 WHERE r.date >= CURRENT_DATE - INTERVAL '7 days'
 GROUP BY r.userid, u.username
-ORDER BY total_minutes DESC
+ORDER BY days_read_more_than_30 DESC, total_minutes DESC
     LIMIT 5
 `
 
 type GetReadingLeaderboardRow struct {
-	Userid       string `json:"userid"`
-	Username     string `json:"username"`
-	TotalMinutes int64  `json:"total_minutes"`
+	Userid             string `json:"userid"`
+	Username           string `json:"username"`
+	TotalMinutes       int64  `json:"total_minutes"`
+	DaysReadMoreThan30 int64  `json:"days_read_more_than_30"`
 }
 
 func (q *Queries) GetReadingLeaderboard(ctx context.Context) ([]GetReadingLeaderboardRow, error) {
@@ -62,7 +64,12 @@ func (q *Queries) GetReadingLeaderboard(ctx context.Context) ([]GetReadingLeader
 	var items []GetReadingLeaderboardRow
 	for rows.Next() {
 		var i GetReadingLeaderboardRow
-		if err := rows.Scan(&i.Userid, &i.Username, &i.TotalMinutes); err != nil {
+		if err := rows.Scan(
+			&i.Userid,
+			&i.Username,
+			&i.TotalMinutes,
+			&i.DaysReadMoreThan30,
+		); err != nil {
 			return nil, err
 		}
 		items = append(items, i)

@@ -35,7 +35,13 @@ func SetupHandlers(bot *tgbotapi.BotAPI, queries *db.Queries) {
 				log.Println(chatID, userID)
 				if update.Message.IsCommand() {
 					command = update.Message.Command()
-					handleCommand(command, queries, update, bot, chatID, userID)
+					log.Println(chatID, userID, command)
+
+					if isAdmin(chatID) {
+						handleCommandAdmin(command, queries, update, bot, chatID, userID)
+					} else {
+						handleCommand(command, queries, update, bot, chatID, userID)
+					}
 				} else {
 					message := update.Message.Text
 					handleMessage(message, queries, update, bot, chatID, userID)
@@ -97,4 +103,15 @@ func SendReminders(bot *tgbotapi.BotAPI, queries *db.Queries) {
 		msg := tgbotapi.NewMessage(int64(chatID), text)
 		bot.Send(msg)
 	}
+}
+
+func isAdmin(chatID int64) bool {
+	AdminID, err := strconv.ParseInt(utils.RegisterChatID, 10, 64)
+	if err != nil {
+		log.Println(err)
+	}
+	if AdminID == chatID {
+		return true
+	}
+	return false
 }

@@ -44,6 +44,40 @@ func (q *Queries) GetLanguage(ctx context.Context, userid string) (sql.NullStrin
 	return language, err
 }
 
+const getRegisteredUsers = `-- name: GetRegisteredUsers :many
+select userid, username, registered, language, state, created_at from users where registered = true
+`
+
+func (q *Queries) GetRegisteredUsers(ctx context.Context) ([]User, error) {
+	rows, err := q.db.QueryContext(ctx, getRegisteredUsers)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []User
+	for rows.Next() {
+		var i User
+		if err := rows.Scan(
+			&i.Userid,
+			&i.Username,
+			&i.Registered,
+			&i.Language,
+			&i.State,
+			&i.CreatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const getUserReged = `-- name: GetUserReged :one
 select registered from users where userid = $1
 `

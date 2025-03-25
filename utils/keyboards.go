@@ -149,6 +149,7 @@ func InlineLeaderboard(items []db.GetReadingLeaderboardRow, usersMax db.GetSumRe
 		navRow := []tgbotapi.InlineKeyboardButton{
 			tgbotapi.NewInlineKeyboardButtonData(emoji, "ignore"),
 			tgbotapi.NewInlineKeyboardButtonData("@"+items[i].Username, "ignore"),
+			tgbotapi.NewInlineKeyboardButtonData(fmt.Sprintf("%d балл.", items[i].DaysReadMoreThan30), "ignore"),
 			tgbotapi.NewInlineKeyboardButtonData(fmt.Sprintf("%d мин.", items[i].TotalMinutes), "ignore"),
 		}
 		keyboard = append(keyboard, navRow)
@@ -168,7 +169,6 @@ func InlineLeaderboard(items []db.GetReadingLeaderboardRow, usersMax db.GetSumRe
 
 func InlineCalendarChanger(year int, month int, readMinutes map[int]int) tgbotapi.InlineKeyboardMarkup {
 	daysOfWeek := []string{"Mo", "Tu", "We", "Th", "Fr", "Sa", "Su"}
-	months := []string{"December", "January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November"}
 	var keyboard [][]tgbotapi.InlineKeyboardButton
 	var weekRow []tgbotapi.InlineKeyboardButton
 
@@ -192,12 +192,14 @@ func InlineCalendarChanger(year int, month int, readMinutes map[int]int) tgbotap
 	}
 
 	// Fill in the actual days
+	var count int
 	for day := 1; day <= daysInMonth; day++ {
 		minutes := readMinutes[day]
 		if minutes == 0 {
 			row = append(row, tgbotapi.NewInlineKeyboardButtonData(strconv.Itoa(day)+"❌", fmt.Sprintf("change_%d.%d.%d", day, month, year)))
 		} else {
 			row = append(row, tgbotapi.NewInlineKeyboardButtonData(strconv.Itoa(day)+"✅", fmt.Sprintf("day_%d.%d.%d", day, month, year)))
+			count++
 		}
 
 		// Break at the end of each week
@@ -216,27 +218,13 @@ func InlineCalendarChanger(year int, month int, readMinutes map[int]int) tgbotap
 	}
 
 	navRow := []tgbotapi.InlineKeyboardButton{
-		tgbotapi.NewInlineKeyboardButtonData("⬅️", fmt.Sprintf("back_%d_%d", year, month-1)),
-		tgbotapi.NewInlineKeyboardButtonData("📆"+months[month], fmt.Sprintf("back_%d_%d", time.Now().Year(), int(time.Now().Month()))),
-		tgbotapi.NewInlineKeyboardButtonData("➡️", fmt.Sprintf("back_%d_%d", year, month+1)),
+		tgbotapi.NewInlineKeyboardButtonData(strconv.Itoa(count)+"✅", "ignore"),
+		tgbotapi.NewInlineKeyboardButtonData("🔄 Update", fmt.Sprintf("back_%d_%d", time.Now().Year(), int(time.Now().Month()))),
+		tgbotapi.NewInlineKeyboardButtonData(strconv.Itoa(time.Now().Day()-count)+"❌", "ingore"),
 	}
+
 	keyboard = append(keyboard, navRow)
-	keyboard = append(keyboard, tgbotapi.NewInlineKeyboardRow(tgbotapi.NewInlineKeyboardButtonData("🔄 Update", fmt.Sprintf("back_%d_%d", time.Now().Year(), int(time.Now().Month())))))
 	keyboard = append(keyboard, tgbotapi.NewInlineKeyboardRow(tgbotapi.NewInlineKeyboardButtonData("🔙️", "back")))
 
 	return tgbotapi.InlineKeyboardMarkup{InlineKeyboard: keyboard}
 }
-
-//func NumberWithEmoji(n int) string {
-//	if n < 1 || n > 31 {
-//		return "❌ Неверное число"
-//	}
-//
-//	numberEmojis := []string{
-//		"1️⃣", "2️⃣", "3️⃣", "4️⃣", "5️⃣", "6️⃣", "7️⃣", "8️⃣", "9️⃣", "🔟",
-//		"1️⃣1️⃣", "1️⃣2️⃣", "1️⃣3️⃣", "1️⃣4️⃣", "1️⃣5️⃣", "1️⃣6️⃣", "1️⃣7️⃣", "1️⃣8️⃣", "1️⃣9️⃣", "2️⃣0️⃣",
-//		"2️⃣1️⃣", "2️⃣2️⃣", "2️⃣3️⃣", "2️⃣4️⃣", "2️⃣5️⃣", "2️⃣6️⃣", "2️⃣7️⃣", "2️⃣8️⃣", "2️⃣9️⃣", "3️⃣0️⃣", "3️⃣1️⃣",
-//	}
-//
-//	return numberEmojis[n-1]
-//}

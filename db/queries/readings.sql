@@ -20,14 +20,16 @@ ORDER BY date DESC;
 SELECT
     r.userid,
     u.username,
-    SUM(r.minutes_read) AS total_minutes
+    SUM(r.minutes_read) AS total_minutes,
+    COUNT(DISTINCT CASE WHEN r.minutes_read > 30 THEN r.date END) AS days_read_more_than_30
 FROM reading_logs r
          JOIN users u ON r.userid = u.userid
 WHERE r.date >= CURRENT_DATE - INTERVAL '7 days'
 GROUP BY r.userid, u.username
-ORDER BY total_minutes DESC
+ORDER BY days_read_more_than_30 DESC, total_minutes DESC
     LIMIT 5;
 
 -- name: GetSumReading :one
 select sum(minutes_read) as Sum, username, userid from reading_logs where userid = $1 group by userid, username;
+
 

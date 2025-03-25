@@ -176,10 +176,10 @@ func handleCallback(command string, queries *db.Queries, updates tgbotapi.Update
 			}
 		} else if command == "standings" {
 			leaderboard, err := queries.GetReadingLeaderboard(ctx)
-			YourMax, err := queries.GetSumReading(ctx, strconv.FormatInt(userid, 10))
 			if err != nil {
 				log.Println(err)
 			}
+			YourMax, err := queries.GetSumReading(ctx, strconv.FormatInt(userid, 10))
 			if err != nil {
 				log.Fatal("Error getting leaderboard:", err)
 			}
