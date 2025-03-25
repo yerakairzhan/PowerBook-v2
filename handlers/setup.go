@@ -32,6 +32,7 @@ func SetupHandlers(bot *tgbotapi.BotAPI, queries *db.Queries) {
 			} else if update.Message != nil {
 				chatID = update.Message.Chat.ID
 				userID = update.Message.From.ID
+				log.Println(chatID, userID)
 				if update.Message.IsCommand() {
 					command = update.Message.Command()
 					handleCommand(command, queries, update, bot, chatID, userID)
@@ -78,4 +79,22 @@ func IsBotWorking(queries *db.Queries, updates tgbotapi.Update) bool {
 		}
 	}
 	return reged.Bool || userReged.Bool
+}
+
+func SendReminders(bot *tgbotapi.BotAPI, queries *db.Queries) {
+	ctx := context.Background()
+	users, err := queries.GetUsersWithoutReadingToday(ctx)
+	if err != nil {
+		log.Println(err)
+	}
+
+	for _, user := range users {
+		chatID, err := strconv.Atoi(user.Userid)
+		if err != nil {
+			log.Println(err)
+		}
+		text := utils.Translate(user.Language.String, "remind_1")
+		msg := tgbotapi.NewMessage(int64(chatID), text)
+		bot.Send(msg)
+	}
 }

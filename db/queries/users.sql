@@ -21,3 +21,11 @@ SELECT state FROM users WHERE userid = $1;
 
 -- name: DeleteUserState :exec
 update users set state = null where userid = $1;
+
+
+-- name: GetUsersWithoutReadingToday :many
+SELECT u.userid, u.language
+FROM users u
+         LEFT JOIN reading_logs r
+                   ON u.userid = r.userid AND r.date = CURRENT_DATE
+WHERE u.registered = TRUE AND r.userid IS NULL;

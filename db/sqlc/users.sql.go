@@ -66,6 +66,42 @@ func (q *Queries) GetUserState(ctx context.Context, userid string) (sql.NullStri
 	return state, err
 }
 
+const getUsersWithoutReadingToday = `-- name: GetUsersWithoutReadingToday :many
+SELECT u.userid, u.language
+FROM users u
+         LEFT JOIN reading_logs r
+                   ON u.userid = r.userid AND r.date = CURRENT_DATE
+WHERE u.registered = TRUE AND r.userid IS NULL
+`
+
+type GetUsersWithoutReadingTodayRow struct {
+	Userid   string         `json:"userid"`
+	Language sql.NullString `json:"language"`
+}
+
+func (q *Queries) GetUsersWithoutReadingToday(ctx context.Context) ([]GetUsersWithoutReadingTodayRow, error) {
+	rows, err := q.db.QueryContext(ctx, getUsersWithoutReadingToday)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []GetUsersWithoutReadingTodayRow
+	for rows.Next() {
+		var i GetUsersWithoutReadingTodayRow
+		if err := rows.Scan(&i.Userid, &i.Language); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const setLanguage = `-- name: SetLanguage :exec
 update users set language = $2 where userid = $1
 `
