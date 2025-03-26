@@ -39,10 +39,11 @@ SELECT
     r.userid,
     u.username,
     SUM(r.minutes_read) AS total_minutes,
-    COUNT(DISTINCT CASE WHEN r.minutes_read > 30 THEN r.date END) AS days_read_more_than_30
+    COUNT(DISTINCT CASE WHEN r.minutes_read > 29 THEN r.date END) AS days_read_more_than_30
 FROM reading_logs r
          JOIN users u ON r.userid = u.userid
-WHERE r.date >= CURRENT_DATE - INTERVAL '7 days'
+WHERE r.date >= CURRENT_DATE - INTERVAL '1 month'
+  AND r.date < CURRENT_DATE
 GROUP BY r.userid, u.username
 ORDER BY days_read_more_than_30 DESC, total_minutes DESC
     LIMIT 5
