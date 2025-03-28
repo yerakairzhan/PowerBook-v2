@@ -71,22 +71,44 @@ func handleCallback(command string, queries *db.Queries, updates tgbotapi.Update
 
 	case command == "register":
 		//todo: Change the text for waiting for accepts sending To admin
+		messageID := updates.CallbackQuery.Message.MessageID
+		removeInlineButtons(bot, chatid, messageID)
 
-		chatidAdmin, err := strconv.ParseInt(utils.RegisterChatID, 10, 64)
+		key := "register_1"
+		text, err := utils.GetTranslation(ctx, queries, updates, key)
 		if err != nil {
 			log.Println(err)
 		}
-		now := time.Now()
-		text := "Who : @" + updates.CallbackQuery.From.UserName + "\nWhen : " + now.Local().Format("2006-01-02 15:04:05") + "\n(make sure choosing below!)"
-		msg := tgbotapi.NewMessage(chatidAdmin, text)
-		inlineKeyboard := utils.InlineAccepter(strconv.FormatInt(chatid, 10))
-		msg.ReplyMarkup = inlineKeyboard
+		msg := tgbotapi.NewMessage(chatid, text)
+		msg.ParseMode = "HTML"
 		_, err = bot.Send(msg)
 		if err != nil {
 			log.Println(err)
 		}
-		messageID := updates.CallbackQuery.Message.MessageID
-		removeInlineButtons(bot, chatid, messageID)
+
+		//todo: Save in db
+		err = queries.SetUserReged(ctx, strconv.FormatInt(userid, 10))
+		if err != nil {
+			log.Println(err)
+		}
+		//sheets
+		if err := utils.AddUserToSheet(utils.SheetID, strconv.FormatInt(userid, 10), updates.CallbackQuery.From.UserName); err != nil {
+			log.Fatalf("Error adding user to sheet: %v", err)
+		}
+
+		//todo: Send the instructions of the bot
+		key = "start_2"
+		text, err = utils.GetTranslation(ctx, queries, updates, key)
+		if err != nil {
+			log.Println(err)
+		}
+		msg = tgbotapi.NewMessage(chatid, text)
+		msg.ParseMode = "HTML"
+
+		_, err = bot.Send(msg)
+		if err != nil {
+			log.Println(err)
+		}
 
 	case strings.HasPrefix(command, "accepter"):
 		trimmed := strings.TrimPrefix(command, "accepter_")
@@ -110,29 +132,6 @@ func handleCallback(command string, queries *db.Queries, updates tgbotapi.Update
 				log.Println(err)
 			}
 
-			//todo: Save in db
-			err = queries.SetUserReged(ctx, strconv.FormatInt(userid, 10))
-			if err != nil {
-				log.Println(err)
-			}
-			//sheets
-			if err := utils.AddUserToSheet(utils.SheetID, strconv.FormatInt(userid, 10), updates.CallbackQuery.From.UserName); err != nil {
-				log.Fatalf("Error adding user to sheet: %v", err)
-			}
-
-			//todo: Send the instructions of the bot
-			key = "start_2"
-			text, err = utils.GetTranslation(ctx, queries, updates, key)
-			if err != nil {
-				log.Println(err)
-			}
-			msg = tgbotapi.NewMessage(chatID, text)
-			msg.ParseMode = "HTML"
-
-			_, err = bot.Send(msg)
-			if err != nil {
-				log.Println(err)
-			}
 		} else if choice == "no" {
 			key := "register_2"
 			text, err := utils.GetTranslation(ctx, queries, updates, key)
@@ -140,7 +139,17 @@ func handleCallback(command string, queries *db.Queries, updates tgbotapi.Update
 				log.Println(err)
 			}
 			msg := tgbotapi.NewMessage(chatID, text)
+			msg.ParseMode = "HTML"
 			_, err = bot.Send(msg)
+			if err != nil {
+				log.Println(err)
+			}
+
+			if err := utils.DeleteUserFromSheet(utils.SheetID, strconv.FormatInt(userid, 10)); err != nil {
+				log.Fatalf("Error deleting user to sheet: %v", err)
+			}
+
+			err = queries.DeleteUserReged(ctx, strconv.FormatInt(userid, 10))
 			if err != nil {
 				log.Println(err)
 			}

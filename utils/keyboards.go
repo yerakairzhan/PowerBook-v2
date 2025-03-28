@@ -4,6 +4,7 @@ import (
 	db "PowerBook2.0/db/sqlc"
 	"fmt"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
+	"log"
 	"strconv"
 	"time"
 )
@@ -33,11 +34,15 @@ func InlineRegister() tgbotapi.InlineKeyboardMarkup {
 	return inline
 }
 
-func InlineAccepter(chatid string) tgbotapi.InlineKeyboardMarkup {
+func InlineAccepter(chatid string, yes_no string) tgbotapi.InlineKeyboardMarkup {
+	yes := yes_no[:3]
+	no := yes_no[5:]
+	log.Println(yes, no)
+
 	inline := tgbotapi.NewInlineKeyboardMarkup(
 		tgbotapi.NewInlineKeyboardRow(
-			tgbotapi.NewInlineKeyboardButtonData("Принять", "accepter_yes_"+chatid),
-			tgbotapi.NewInlineKeyboardButtonData("Отказать", "accepter_no_"+chatid),
+			tgbotapi.NewInlineKeyboardButtonData(yes, "accepter_yes_"+chatid),
+			tgbotapi.NewInlineKeyboardButtonData(no, "accepter_no_"+chatid),
 		),
 	)
 	return inline

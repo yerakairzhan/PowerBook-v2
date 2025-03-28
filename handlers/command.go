@@ -83,5 +83,41 @@ func handleCommandAdmin(command string, queries *db.Queries, updates tgbotapi.Up
 		state.String = "admin_write"
 		arg := db.SetUserStateParams{State: state, Userid: strconv.FormatInt(userid, 10)}
 		queries.SetUserState(ctx, arg)
+
+	case "reg_start":
+		err := queries.Enable_bot_registration(ctx)
+		if err != nil {
+			log.Println(err)
+		}
+	case "reg_end":
+		err := queries.Diasble_bot_registration(ctx)
+		if err != nil {
+			log.Println(err)
+		}
+
+	case "delete":
+		users, err := queries.GetRegisteredUsers(ctx)
+		if err != nil {
+			log.Println(err)
+		}
+
+		for _, user := range users {
+			lng := user.Language.String
+			chatID, _ := strconv.ParseInt(user.Userid, 10, 64)
+
+			text, err := utils.GetTranslation(ctx, queries, updates, "admin_1")
+			if err != nil {
+				log.Println(err)
+			}
+
+			msg := tgbotapi.NewMessage(chatID, text)
+			yesNo := utils.Translate(lng, "yes_no")
+			msg.ReplyMarkup = utils.InlineAccepter(strconv.FormatInt(chatID, 10), yesNo)
+			_, err = bot.Send(msg)
+			if err != nil {
+				log.Println(err)
+			}
+		}
 	}
+
 }

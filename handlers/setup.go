@@ -61,11 +61,11 @@ func IsBotWorking(queries *db.Queries, updates tgbotapi.Update) bool {
 	utils.LoadConfig()
 	ctx := context.Background()
 
-	var userid int64
+	var chatID int64
 	if updates.CallbackQuery != nil {
-		userid = updates.CallbackQuery.From.ID
+		chatID = updates.CallbackQuery.Message.Chat.ID
 	} else if updates.Message != nil {
-		userid = updates.Message.From.ID
+		chatID = updates.Message.Chat.ID
 	}
 
 	reged, err := queries.Getbot(ctx)
@@ -75,15 +75,16 @@ func IsBotWorking(queries *db.Queries, updates tgbotapi.Update) bool {
 	}
 
 	var userReged sql.NullBool
-	if strconv.FormatInt(userid, 10) == utils.AdminID {
+	if strconv.FormatInt(chatID, 10) == utils.RegisterChatID {
 		userReged.Bool = true
 	} else {
-		userReged, err = queries.GetUserReged(ctx, strconv.FormatInt(userid, 10))
+		userReged, err = queries.GetUserReged(ctx, strconv.FormatInt(chatID, 10))
 		if err != nil {
 			log.Println(err, " Setup 55 line")
 			userReged.Bool = false
 		}
 	}
+
 	return reged.Bool || userReged.Bool
 }
 

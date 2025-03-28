@@ -1,6 +1,9 @@
 -- name: CreateUser :exec
 insert into users (userid, username) values ($1, $2);
 
+-- name: DeleteUserReged :exec
+update users set registered = false where userid = $1;
+
 -- name: GetLanguage :one
 select language from users where userid = $1;
 
