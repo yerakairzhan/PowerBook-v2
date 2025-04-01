@@ -25,7 +25,7 @@ SELECT
 FROM reading_logs r
          JOIN users u ON r.userid = u.userid
 WHERE r.date >= CURRENT_DATE - INTERVAL '1 month'
-  AND r.date < CURRENT_DATE
+  AND r.date <= CURRENT_DATE
 GROUP BY r.userid, u.username
 ORDER BY days_read_more_than_30 DESC, total_minutes DESC
     LIMIT 5;
