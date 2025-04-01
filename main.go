@@ -36,10 +36,11 @@ func main() {
 	db.CreateBot(context.Background())
 
 	// Set timezone
-	loc, _ := time.LoadLocation("Asia/Almaty") // Change to your timezone
+	loc := time.FixedZone("ALMT", 6*60*60) // 6 hours ahead of UTC
+
 	c := cron.New(cron.WithLocation(loc))
 
-	// Schedule the job at 20:00 in the specified timezone
+	// Schedule job at 20:00 local time
 	c.AddFunc("0 20 * * *", func() {
 		handlers.SendReminders(bot, db)
 	})
