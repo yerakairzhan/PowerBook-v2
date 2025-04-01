@@ -10,6 +10,7 @@ import (
 	_ "github.com/lib/pq"
 	"github.com/robfig/cron/v3"
 	"log"
+	"time"
 )
 
 func main() {
@@ -34,10 +35,11 @@ func main() {
 	db := db.New(conn)
 	db.CreateBot(context.Background())
 
-	// Инициализируем планировщик задач (cron)
-	c := cron.New()
+	// Set timezone
+	loc, _ := time.LoadLocation("Asia/Almaty") // Change to your timezone
+	c := cron.New(cron.WithLocation(loc))
 
-	// Добавляем ежедневное напоминание в 20:00
+	// Schedule the job at 20:00 in the specified timezone
 	c.AddFunc("0 20 * * *", func() {
 		handlers.SendReminders(bot, db)
 	})

@@ -13,6 +13,9 @@ import (
 	"time"
 )
 
+var PhotoStartKaz string = "https://i.imghippo.com/files/fit6422iZY.png"
+var PhotoStartRus string = "https://i.imghippo.com/files/ur5705pvI.png"
+
 func handleCallback(command string, queries *db.Queries, updates tgbotapi.Update, bot *tgbotapi.BotAPI, chatid int64, userid int64) {
 	ctx := context.Background()
 	log.Println("callback: ", command)
@@ -48,25 +51,34 @@ func handleCallback(command string, queries *db.Queries, updates tgbotapi.Update
 		}
 
 		//todo: Change the text for Start
+		// Determine the correct photo URL
+		photoURL := PhotoStartKaz // Default to Kazakh
+		if lang.String == "Ru" {
+			photoURL = PhotoStartRus
+		}
+
+		// Create a photo message
+		photo := tgbotapi.NewPhoto(chatid, tgbotapi.FileURL(photoURL))
+
+		// Get translated text
 		key := "start_1"
 		text, err := utils.GetTranslation(ctx, queries, updates, key)
 		if err != nil {
 			log.Println(err)
 		}
+
+		// Create inline keyboard
 		inlineKeyboard := utils.InlineRegister()
-		callback := updates.CallbackQuery
 
-		editMsg := tgbotapi.NewEditMessageTextAndMarkup(
-			callback.Message.Chat.ID,
-			callback.Message.MessageID,
-			callback.From.FirstName+text,
-			inlineKeyboard,
-		)
-		editMsg.ParseMode = "HTML"
+		// Set caption and attach inline keyboard
+		photo.Caption = updates.CallbackQuery.From.FirstName + text
+		photo.ReplyMarkup = inlineKeyboard
+		photo.ParseMode = "HTML"
 
-		_, err = bot.Send(editMsg)
+		// Send the photo with caption and inline keyboard
+		_, err = bot.Send(photo)
 		if err != nil {
-			log.Println("Ошибка при изменении сообщения:", err)
+			log.Println("Ошибка при отправке фото:", err)
 		}
 
 	case command == "register":

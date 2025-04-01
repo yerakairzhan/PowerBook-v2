@@ -89,11 +89,20 @@ func handleCommandAdmin(command string, queries *db.Queries, updates tgbotapi.Up
 		if err != nil {
 			log.Println(err)
 		}
+		chatid, err = strconv.ParseInt(utils.RegisterChatID, 10, 64)
+		if err != nil {
+			log.Println(err)
+		}
+		msg := tgbotapi.NewMessage(chatid, "Registration started")
+		bot.Send(msg)
 	case "reg_end":
 		err := queries.Diasble_bot_registration(ctx)
 		if err != nil {
 			log.Println(err)
 		}
+
+		msg := tgbotapi.NewMessage(chatid, "Registration ended")
+		bot.Send(msg)
 
 	case "delete":
 		users, err := queries.GetRegisteredUsers(ctx)
@@ -118,6 +127,9 @@ func handleCommandAdmin(command string, queries *db.Queries, updates tgbotapi.Up
 				log.Println(err)
 			}
 		}
+
+		msg := tgbotapi.NewMessage(chatid, "Delete suggested")
+		bot.Send(msg)
 	}
 
 }
