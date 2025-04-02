@@ -213,7 +213,7 @@ func InlineCalendarChanger(year int, month int, readMinutes map[int]int) tgbotap
 		if minutes == 0 && day <= time.Now().Day() {
 			row = append(row, tgbotapi.NewInlineKeyboardButtonData(strconv.Itoa(day)+"❌", fmt.Sprintf("change_%d.%d.%d", day, month, year)))
 		} else if minutes != 0 {
-			row = append(row, tgbotapi.NewInlineKeyboardButtonData(strconv.Itoa(day)+"✅", fmt.Sprintf("day_%d.%d.%d", day, month, year)))
+			row = append(row, tgbotapi.NewInlineKeyboardButtonData(strconv.Itoa(day)+"✅", fmt.Sprintf("change_%d.%d.%d", day, month, year)))
 			count++
 		} else {
 			row = append(row, tgbotapi.NewInlineKeyboardButtonData(strconv.Itoa(day), fmt.Sprintf("day_%d.%d.%d", day, month, year)))

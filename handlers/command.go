@@ -15,43 +15,28 @@ func handleCommand(command string, queries *db.Queries, updates tgbotapi.Update,
 	username := updates.Message.From.UserName
 	switch command {
 	case "start":
-		//todo: User created for the first time in DataBase
-		arg := db.CreateUserParams{Userid: strconv.FormatInt(userid, 10), Username: username}
-		err := queries.CreateUser(ctx, arg)
-		if err != nil {
-			log.Println(err)
-		}
-
-		//todo: ask for a language
-		msg := tgbotapi.NewMessage(chatid, "Выберите язык / Тілді таңдаңыз")
-		msg.ReplyMarkup = utils.InlineLang()
-		_, err = bot.Send(msg)
-		if err != nil {
-			log.Println(err)
-		}
-
-		//todo: Message on start
-		//key = "start_1"
-		//text, err = utils.GetTranslation(ctx, queries, updates, key)
-		//if err != nil {
-		//	log.Println(err)
-		//}
-		//msg = tgbotapi.NewMessage(chatid, updates.Message.From.FirstName+text)
-		//msg.ParseMode = "HTML"
-		//_, err = bot.Send(msg)
-		//if err != nil {
-		//	log.Println(err)
-		//}
-
-	case "startorendbot":
-		reged, err := queries.Getbot(ctx)
-		if err != nil {
-			log.Println(err)
-		}
-		if reged.Bool == true {
-			queries.Diasble_bot_registration(ctx)
+		if updates.Message.From.UserName == "" {
+			msg := tgbotapi.NewMessage(chatid, "Извините, но вы не установили в настройках Telegram юзернейм, и поэтому мы не можем вас добавить. \n\n<b>Как установить юзернейм в Telegram:</b> \n1️⃣ Откройте Telegram. \n2️⃣ Перейдите в <b>Настройки</b> (⚙️).\n3️⃣ Выберите <b>Изменить профиль</b>. \n4️⃣ Нажмите на <b>Имя пользователя</b>. \n5️⃣ Введите уникальный юзернейм.\n6️⃣ Сохраните изменения. \n После этого снова вызовите эту команду! 🚀\n\n <b>/start</b>")
+			msg.ParseMode = "HTML"
+			_, err := bot.Send(msg)
+			if err != nil {
+				log.Println(err)
+			}
 		} else {
-			queries.Enable_bot_registration(ctx)
+			//todo: User created for the first time in DataBase
+			arg := db.CreateUserParams{Userid: strconv.FormatInt(userid, 10), Username: username}
+			err := queries.CreateUser(ctx, arg)
+			if err != nil {
+				log.Println(err)
+			}
+
+			//todo: ask for a language
+			msg := tgbotapi.NewMessage(chatid, "Выберите язык / Тілді таңдаңыз")
+			msg.ReplyMarkup = utils.InlineLang()
+			_, err = bot.Send(msg)
+			if err != nil {
+				log.Println(err)
+			}
 		}
 
 	case "menu":
