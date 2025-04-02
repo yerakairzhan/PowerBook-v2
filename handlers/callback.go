@@ -197,6 +197,7 @@ func handleCallback(command string, queries *db.Queries, updates tgbotapi.Update
 			}
 		} else if command == "standings" {
 			leaderboard, err := queries.GetReadingLeaderboard(ctx)
+
 			if err != nil {
 				log.Println(err)
 			}

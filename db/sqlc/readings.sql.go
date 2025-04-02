@@ -120,19 +120,25 @@ func (q *Queries) GetReadingLogsByUser(ctx context.Context, userid string) ([]Ge
 }
 
 const getSumReading = `-- name: GetSumReading :one
-select sum(minutes_read) as Sum, username, userid from reading_logs where userid = $1 group by userid, username
+select sum(minutes_read) as Sum, username, userid, COUNT(DISTINCT CASE WHEN minutes_read > 29 THEN date END) AS days_read_more_than_30 from reading_logs where userid = $1 group by userid, username
 `
 
 type GetSumReadingRow struct {
-	Sum      int64  `json:"sum"`
-	Username string `json:"username"`
-	Userid   string `json:"userid"`
+	Sum                int64  `json:"sum"`
+	Username           string `json:"username"`
+	Userid             string `json:"userid"`
+	DaysReadMoreThan30 int64  `json:"days_read_more_than_30"`
 }
 
 func (q *Queries) GetSumReading(ctx context.Context, userid string) (GetSumReadingRow, error) {
 	row := q.db.QueryRowContext(ctx, getSumReading, userid)
 	var i GetSumReadingRow
-	err := row.Scan(&i.Sum, &i.Username, &i.Userid)
+	err := row.Scan(
+		&i.Sum,
+		&i.Username,
+		&i.Userid,
+		&i.DaysReadMoreThan30,
+	)
 	return i, err
 }
 

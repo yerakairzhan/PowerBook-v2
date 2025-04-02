@@ -133,6 +133,15 @@ func InlineCalendarKeyboard(year int, month int, readMinutes map[int]int) tgbota
 func InlineLeaderboard(items []db.GetReadingLeaderboardRow, usersMax db.GetSumReadingRow) tgbotapi.InlineKeyboardMarkup {
 	var keyboard [][]tgbotapi.InlineKeyboardButton
 	inTop := false
+	log.Println(items, usersMax)
+
+	navRow := []tgbotapi.InlineKeyboardButton{
+		tgbotapi.NewInlineKeyboardButtonData("Place", "ignore"),
+		tgbotapi.NewInlineKeyboardButtonData("Username", "ignore"),
+		tgbotapi.NewInlineKeyboardButtonData("Points", "ignore"),
+		tgbotapi.NewInlineKeyboardButtonData("Minutes", "ignore"),
+	}
+	keyboard = append(keyboard, navRow)
 
 	for i := 0; i < len(items); i++ {
 		if items[i].Userid == usersMax.Userid {
@@ -163,6 +172,7 @@ func InlineLeaderboard(items []db.GetReadingLeaderboardRow, usersMax db.GetSumRe
 		navRow := []tgbotapi.InlineKeyboardButton{
 			tgbotapi.NewInlineKeyboardButtonData("🫵", "ignore"),
 			tgbotapi.NewInlineKeyboardButtonData("@"+usersMax.Username, "ignore"),
+			tgbotapi.NewInlineKeyboardButtonData(fmt.Sprintf("%d балл.", usersMax.DaysReadMoreThan30), "ignore"),
 			tgbotapi.NewInlineKeyboardButtonData(fmt.Sprintf("%d мин.", usersMax.Sum), "ignore"),
 		}
 		keyboard = append(keyboard, navRow)
