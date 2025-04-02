@@ -245,3 +245,20 @@ func InlineCalendarChanger(year int, month int, readMinutes map[int]int) tgbotap
 
 	return tgbotapi.InlineKeyboardMarkup{InlineKeyboard: keyboard}
 }
+
+//func numberWithEmoji(n int) string {
+//	if n < 1 || n > 31 {
+//		return "❌ Неверное число"
+//	}
+//
+//	digits := map[rune]string{
+//		'0': "0️⃣", '1': "1️⃣", '2': "2️⃣", '3': "3️⃣", '4': "4️⃣",
+//		'5': "5️⃣", '6': "6️⃣", '7': "7️⃣", '8': "8️⃣", '9': "9️⃣",
+//	}
+//
+//	var emoji strings.Builder
+//	for _, digit := range fmt.Sprintf("%d", n) {
+//		emoji.WriteString(digits[digit])
+//	}
+//	return emoji.String()
+//}

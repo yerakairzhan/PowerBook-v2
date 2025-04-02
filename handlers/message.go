@@ -35,7 +35,12 @@ func handleMessage(message string, queries *db.Queries, updates tgbotapi.Update,
 			return
 		}
 
-		date := time.Now()
+		almatyLocation, err := time.LoadLocation("Asia/Almaty")
+		if err != nil {
+			fmt.Println("Error loading timezone:", err)
+			return
+		}
+		date := time.Now().In(almatyLocation)
 		arg := db.CreateReadingLogParams{
 			Userid:      strconv.FormatInt(userid, 10),
 			Username:    updates.Message.From.UserName,

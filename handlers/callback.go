@@ -326,16 +326,18 @@ func sendCalendar(simple_calendar bool, year int, month int, queries *db.Queries
 			readMinutes[day] = int(log.MinutesRead)
 		}
 	}
-	key := "changer_1"
+	var inline tgbotapi.InlineKeyboardMarkup
+	var key string
+	if simple_calendar {
+		inline = utils.InlineCalendarKeyboard(year, int(month), readMinutes)
+		key = "experience_1"
+	} else {
+		inline = utils.InlineCalendarChanger(year, int(month), readMinutes)
+		key = "changer_1"
+	}
 	text, err := utils.GetTranslation(ctx, queries, updates, key)
 	if err != nil {
 		log.Println(err)
-	}
-	var inline tgbotapi.InlineKeyboardMarkup
-	if simple_calendar {
-		inline = utils.InlineCalendarKeyboard(year, int(month), readMinutes)
-	} else {
-		inline = utils.InlineCalendarChanger(year, int(month), readMinutes)
 	}
 
 	if isEdit {
