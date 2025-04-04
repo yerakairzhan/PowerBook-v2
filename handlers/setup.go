@@ -11,7 +11,6 @@ import (
 )
 
 func SetupHandlers(bot *tgbotapi.BotAPI, queries *db.Queries) {
-	//ctx := context.Background()
 	u := tgbotapi.NewUpdate(0)
 	u.Timeout = 60
 	updates := bot.GetUpdatesChan(u)
@@ -102,6 +101,7 @@ func SendReminders(bot *tgbotapi.BotAPI, queries *db.Queries) {
 		}
 		text := utils.Translate(user.Language.String, "remind_1")
 		msg := tgbotapi.NewMessage(int64(chatID), text)
+		msg.ParseMode = "HTML"
 		bot.Send(msg)
 	}
 }

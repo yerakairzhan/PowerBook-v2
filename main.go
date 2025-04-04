@@ -41,7 +41,7 @@ func main() {
 	c := cron.New(cron.WithLocation(loc))
 
 	// Schedule job at 20:00 local time
-	c.AddFunc("0 20 * * *", func() {
+	c.AddFunc("0 21 * * *", func() {
 		handlers.SendReminders(bot, db)
 	})
 
