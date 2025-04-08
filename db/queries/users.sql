@@ -4,6 +4,9 @@ insert into users (userid, username) values ($1, $2);
 -- name: DeleteUserReged :exec
 update users set registered = false where userid = $1;
 
+-- name: DeleteUserRegedAll :exec
+update users set registered = false where registered = true;
+
 -- name: GetLanguage :one
 select language from users where userid = $1;
 
@@ -34,4 +37,7 @@ WHERE u.registered = TRUE AND r.userid IS NULL;
 
 
 -- name: GetRegisteredUsers :many
+select * from users where registered = true;
+
+-- name: GetUnregisteredUsers :many
 select * from users where registered = true;

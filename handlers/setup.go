@@ -16,6 +16,14 @@ func SetupHandlers(bot *tgbotapi.BotAPI, queries *db.Queries) {
 	updates := bot.GetUpdatesChan(u)
 
 	for update := range updates {
+		if update.CallbackQuery != nil && update.CallbackQuery.Data == "somecallback" {
+			chatID := update.CallbackQuery.Message.Chat.ID
+			userID := update.CallbackQuery.From.ID
+			handleCallback("somecallback", queries, update, bot, chatID, userID)
+			continue
+		}
+
+		// Остальные случаи — через стандартную проверку IsBotWorking
 		if IsBotWorking(queries, update) {
 			var userID int64
 			var chatID int64
@@ -32,6 +40,7 @@ func SetupHandlers(bot *tgbotapi.BotAPI, queries *db.Queries) {
 				chatID = update.Message.Chat.ID
 				userID = update.Message.From.ID
 				log.Println(chatID, userID)
+
 				if update.Message.IsCommand() {
 					command = update.Message.Command()
 					log.Println(chatID, userID, command)
@@ -45,13 +54,13 @@ func SetupHandlers(bot *tgbotapi.BotAPI, queries *db.Queries) {
 					message := update.Message.Text
 					handleMessage(message, queries, update, bot, chatID, userID)
 				}
-			} else {
-				continue
 			}
 		} else {
-			text := utils.Translate("ru", "bot_1")
-			msg := tgbotapi.NewMessage(update.Message.Chat.ID, text)
-			bot.Send(msg)
+			if update.Message != nil {
+				text := utils.Translate("ru", "bot_1")
+				msg := tgbotapi.NewMessage(update.Message.Chat.ID, text)
+				bot.Send(msg)
+			}
 		}
 	}
 }

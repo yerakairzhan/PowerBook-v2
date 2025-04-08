@@ -33,6 +33,15 @@ func (q *Queries) DeleteUserReged(ctx context.Context, userid string) error {
 	return err
 }
 
+const deleteUserRegedAll = `-- name: DeleteUserRegedAll :exec
+update users set registered = false where registered = true
+`
+
+func (q *Queries) DeleteUserRegedAll(ctx context.Context) error {
+	_, err := q.db.ExecContext(ctx, deleteUserRegedAll)
+	return err
+}
+
 const deleteUserState = `-- name: DeleteUserState :exec
 update users set state = null where userid = $1
 `
@@ -59,6 +68,40 @@ select userid, username, registered, language, state, created_at from users wher
 
 func (q *Queries) GetRegisteredUsers(ctx context.Context) ([]User, error) {
 	rows, err := q.db.QueryContext(ctx, getRegisteredUsers)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []User
+	for rows.Next() {
+		var i User
+		if err := rows.Scan(
+			&i.Userid,
+			&i.Username,
+			&i.Registered,
+			&i.Language,
+			&i.State,
+			&i.CreatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const getUnregisteredUsers = `-- name: GetUnregisteredUsers :many
+select userid, username, registered, language, state, created_at from users where registered = true
+`
+
+func (q *Queries) GetUnregisteredUsers(ctx context.Context) ([]User, error) {
+	rows, err := q.db.QueryContext(ctx, getUnregisteredUsers)
 	if err != nil {
 		return nil, err
 	}

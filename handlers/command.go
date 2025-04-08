@@ -89,7 +89,7 @@ func handleCommandAdmin(command string, queries *db.Queries, updates tgbotapi.Up
 		msg := tgbotapi.NewMessage(chatid, "Registration ended")
 		bot.Send(msg)
 
-	case "delete":
+	case "delete_start":
 		users, err := queries.GetRegisteredUsers(ctx)
 		if err != nil {
 			log.Println(err)
@@ -111,9 +111,43 @@ func handleCommandAdmin(command string, queries *db.Queries, updates tgbotapi.Up
 			if err != nil {
 				log.Println(err)
 			}
+
+			err = queries.DeleteUserRegedAll(ctx)
+			if err != nil {
+				log.Println(err)
+			}
 		}
 
 		msg := tgbotapi.NewMessage(chatid, "Delete suggested")
+		bot.Send(msg)
+
+	case "delete_end":
+		users, err := queries.GetUnregisteredUsers(ctx)
+		if err != nil {
+			log.Println(err)
+		}
+
+		for _, user := range users {
+			chatID, _ := strconv.ParseInt(user.Userid, 10, 64)
+
+			text, err := utils.GetTranslation(ctx, queries, updates, "register_2")
+			if err != nil {
+				log.Println(err)
+			}
+
+			msg := tgbotapi.NewMessage(chatID, text)
+			_, err = bot.Send(msg)
+			if err != nil {
+				log.Println(err)
+			}
+
+			err = DeleteUser(queries, updates, bot, chatID, userid)
+			if err != nil {
+				log.Println(err)
+			}
+		}
+
+		msg := tgbotapi.NewMessage(chatid, "Deleted all")
 		bot.Send(msg)
 	}
 
