@@ -143,6 +143,7 @@ func handleCallback(command string, queries *db.Queries, updates tgbotapi.Update
 			if err != nil {
 				log.Println(err)
 			}
+			queries.SetUserReged(ctx, strconv.FormatInt(userid, 10))
 
 		} else if choice == "no" {
 			err := DeleteUser(queries, userid)
