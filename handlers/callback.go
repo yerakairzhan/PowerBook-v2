@@ -132,7 +132,7 @@ func handleCallback(command string, queries *db.Queries, updates tgbotapi.Update
 		}
 
 		if choice == "yes" {
-			key := "register_1"
+			key := "admin_2"
 			text, err := utils.GetTranslation(ctx, queries, updates, key)
 			if err != nil {
 				log.Println(err)
@@ -145,7 +145,19 @@ func handleCallback(command string, queries *db.Queries, updates tgbotapi.Update
 			}
 
 		} else if choice == "no" {
-			err := DeleteUser(queries, updates, bot, chatID, userid)
+			err := DeleteUser(queries, userid)
+			if err != nil {
+				log.Println(err)
+			}
+
+			key := "admin_3"
+			text, err := utils.GetTranslation(ctx, queries, updates, key)
+			if err != nil {
+				log.Println(err)
+			}
+			msg := tgbotapi.NewMessage(chatID, text)
+			msg.ParseMode = "HTML"
+			_, err = bot.Send(msg)
 			if err != nil {
 				log.Println(err)
 			}
@@ -343,26 +355,14 @@ func sendCalendar(simple_calendar bool, year int, month int, queries *db.Queries
 	}
 }
 
-func DeleteUser(queries *db.Queries, updates tgbotapi.Update, bot *tgbotapi.BotAPI, chatid int64, userid int64) error {
+func DeleteUser(queries *db.Queries, userid int64) error {
 	ctx := context.Background()
-
-	key := "register_2"
-	text, err := utils.GetTranslation(ctx, queries, updates, key)
-	if err != nil {
-		log.Println(err)
-	}
-	msg := tgbotapi.NewMessage(chatid, text)
-	msg.ParseMode = "HTML"
-	_, err = bot.Send(msg)
-	if err != nil {
-		log.Println(err)
-	}
 
 	if err := utils.DeleteUserFromSheet(utils.SheetID, strconv.FormatInt(userid, 10)); err != nil {
 		log.Fatalf("Error deleting user to sheet: %v", err)
 	}
 
-	err = queries.DeleteUserReged(ctx, strconv.FormatInt(userid, 10))
+	err := queries.DeleteUserReged(ctx, strconv.FormatInt(userid, 10))
 	if err != nil {
 		log.Println(err)
 	}

@@ -41,3 +41,6 @@ select * from users where registered = true;
 
 -- name: GetUnregisteredUsers :many
 select * from users where registered = true;
+
+-- name: GetAllUsers :many
+select * from users;

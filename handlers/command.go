@@ -8,6 +8,7 @@ import (
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"log"
 	"strconv"
+	"time"
 )
 
 func handleCommand(command string, queries *db.Queries, updates tgbotapi.Update, bot *tgbotapi.BotAPI, chatid int64, userid int64) {
@@ -105,17 +106,26 @@ func handleCommandAdmin(command string, queries *db.Queries, updates tgbotapi.Up
 			}
 
 			msg := tgbotapi.NewMessage(chatID, text)
+			msg.ParseMode = "HTML"
+
 			yesNo := utils.Translate(lng, "yes_no")
 			msg.ReplyMarkup = utils.InlineAccepter(strconv.FormatInt(chatID, 10), yesNo)
-			_, err = bot.Send(msg)
+
+			sentMsg, err := bot.Send(msg)
 			if err != nil {
 				log.Println(err)
+			} else {
+				go func(chatID int64, messageID int) {
+					time.AfterFunc(24*time.Hour, func() {
+						deleteMsg := tgbotapi.NewDeleteMessage(chatID, messageID)
+						if _, err := bot.Send(deleteMsg); err != nil {
+							log.Println("Ошибка при удалении сообщения:", err)
+						}
+					})
+				}(chatID, sentMsg.MessageID)
 			}
 
-			err = queries.DeleteUserRegedAll(ctx)
-			if err != nil {
-				log.Println(err)
-			}
+			queries.DeleteUserRegedAll(ctx)
 		}
 
 		msg := tgbotapi.NewMessage(chatid, "Delete suggested")
@@ -128,26 +138,14 @@ func handleCommandAdmin(command string, queries *db.Queries, updates tgbotapi.Up
 		}
 
 		for _, user := range users {
-			chatID, _ := strconv.ParseInt(user.Userid, 10, 64)
-
-			text, err := utils.GetTranslation(ctx, queries, updates, "register_2")
-			if err != nil {
-				log.Println(err)
-			}
-
-			msg := tgbotapi.NewMessage(chatID, text)
-			_, err = bot.Send(msg)
-			if err != nil {
-				log.Println(err)
-			}
-
-			err = DeleteUser(queries, updates, bot, chatID, userid)
+			userid, err := strconv.ParseInt(user.Userid, 10, 64)
+			err = DeleteUser(queries, userid)
 			if err != nil {
 				log.Println(err)
 			}
 		}
 
-		msg := tgbotapi.NewMessage(chatid, "Deleted all")
+		msg := tgbotapi.NewMessage(chatid, "Deleted all unreged")
 		bot.Send(msg)
 	}
 

@@ -51,6 +51,40 @@ func (q *Queries) DeleteUserState(ctx context.Context, userid string) error {
 	return err
 }
 
+const getAllUsers = `-- name: GetAllUsers :many
+select userid, username, registered, language, state, created_at from users
+`
+
+func (q *Queries) GetAllUsers(ctx context.Context) ([]User, error) {
+	rows, err := q.db.QueryContext(ctx, getAllUsers)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []User
+	for rows.Next() {
+		var i User
+		if err := rows.Scan(
+			&i.Userid,
+			&i.Username,
+			&i.Registered,
+			&i.Language,
+			&i.State,
+			&i.CreatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const getLanguage = `-- name: GetLanguage :one
 select language from users where userid = $1
 `

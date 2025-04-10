@@ -6,6 +6,7 @@ import (
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"log"
 	"strconv"
+	"strings"
 	"time"
 )
 
@@ -35,8 +36,9 @@ func InlineRegister() tgbotapi.InlineKeyboardMarkup {
 }
 
 func InlineAccepter(chatid string, yes_no string) tgbotapi.InlineKeyboardMarkup {
-	yes := yes_no[:3]
-	no := yes_no[5:]
+	parts := strings.Split(yes_no, "_")
+	yes := parts[0]
+	no := parts[1]
 	log.Println(yes, no)
 
 	inline := tgbotapi.NewInlineKeyboardMarkup(

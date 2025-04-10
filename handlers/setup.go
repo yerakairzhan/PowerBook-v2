@@ -8,6 +8,7 @@ import (
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"log"
 	"strconv"
+	"strings"
 )
 
 func SetupHandlers(bot *tgbotapi.BotAPI, queries *db.Queries) {
@@ -16,15 +17,7 @@ func SetupHandlers(bot *tgbotapi.BotAPI, queries *db.Queries) {
 	updates := bot.GetUpdatesChan(u)
 
 	for update := range updates {
-		if update.CallbackQuery != nil && update.CallbackQuery.Data == "somecallback" {
-			chatID := update.CallbackQuery.Message.Chat.ID
-			userID := update.CallbackQuery.From.ID
-			handleCallback("somecallback", queries, update, bot, chatID, userID)
-			continue
-		}
-
-		// Остальные случаи — через стандартную проверку IsBotWorking
-		if IsBotWorking(queries, update) {
+		if IsBotWorking(queries, update) || (update.CallbackQuery != nil && strings.HasPrefix(update.CallbackQuery.Data, "accepter")) {
 			var userID int64
 			var chatID int64
 			var command string
@@ -40,7 +33,6 @@ func SetupHandlers(bot *tgbotapi.BotAPI, queries *db.Queries) {
 				chatID = update.Message.Chat.ID
 				userID = update.Message.From.ID
 				log.Println(chatID, userID)
-
 				if update.Message.IsCommand() {
 					command = update.Message.Command()
 					log.Println(chatID, userID, command)
@@ -54,13 +46,13 @@ func SetupHandlers(bot *tgbotapi.BotAPI, queries *db.Queries) {
 					message := update.Message.Text
 					handleMessage(message, queries, update, bot, chatID, userID)
 				}
+			} else {
+				continue
 			}
 		} else {
-			if update.Message != nil {
-				text := utils.Translate("ru", "bot_1")
-				msg := tgbotapi.NewMessage(update.Message.Chat.ID, text)
-				bot.Send(msg)
-			}
+			text := utils.Translate("ru", "bot_1")
+			msg := tgbotapi.NewMessage(update.Message.Chat.ID, text)
+			bot.Send(msg)
 		}
 	}
 }

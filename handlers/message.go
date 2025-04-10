@@ -247,7 +247,7 @@ func handleMessage(message string, queries *db.Queries, updates tgbotapi.Update,
 			log.Println("Ошибка удаления сообщения пользователя:", err)
 		}
 	} else if state.String == "admin_write" {
-		users, err := queries.GetRegisteredUsers(ctx)
+		users, err := queries.GetAllUsers(ctx)
 		if err != nil {
 			log.Println(err)
 		}
@@ -258,6 +258,7 @@ func handleMessage(message string, queries *db.Queries, updates tgbotapi.Update,
 				log.Println(err.Error())
 			}
 			msg := tgbotapi.NewMessage(chatID, message)
+			msg.ParseMode = "html"
 			bot.Send(msg)
 		}
 
