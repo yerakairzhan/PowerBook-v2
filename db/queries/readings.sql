@@ -31,6 +31,15 @@ ORDER BY days_read_more_than_30 DESC, total_minutes DESC
     LIMIT 5;
 
 -- name: GetSumReading :one
-select sum(minutes_read) as Sum, username, userid, COUNT(DISTINCT CASE WHEN minutes_read > 29 THEN date END) AS days_read_more_than_30 from reading_logs where userid = $1 group by userid, username;
+SELECT
+    SUM(minutes_read) AS Sum,
+    username,
+    userid,
+    COUNT(DISTINCT CASE WHEN minutes_read > 29 THEN date END) AS days_read_more_than_30
+FROM reading_logs
+WHERE userid = '710606281'
+  AND EXTRACT(YEAR FROM date) = EXTRACT(YEAR FROM CURRENT_DATE)
+  AND EXTRACT(MONTH FROM date) = EXTRACT(MONTH FROM CURRENT_DATE)
+GROUP BY userid, username;
 
 
