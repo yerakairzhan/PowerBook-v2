@@ -37,7 +37,7 @@ SELECT
     userid,
     COUNT(DISTINCT CASE WHEN minutes_read > 29 THEN date END) AS days_read_more_than_30
 FROM reading_logs
-WHERE userid = '710606281'
+WHERE userid = $1
   AND EXTRACT(YEAR FROM date) = EXTRACT(YEAR FROM CURRENT_DATE)
   AND EXTRACT(MONTH FROM date) = EXTRACT(MONTH FROM CURRENT_DATE)
 GROUP BY userid, username;
