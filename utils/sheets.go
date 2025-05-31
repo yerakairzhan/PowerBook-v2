@@ -58,6 +58,7 @@ func GetSheetname(time time.Time) string {
 
 func AddUserToSheet(spreadsheetId, userID, username string) error {
 	currentTime := time.Now()
+	currentTime = currentTime.Add(5 * time.Hour)
 	sheetName := GetSheetname(currentTime)
 
 	creds := Creds
@@ -103,7 +104,9 @@ func AddUserToSheet(spreadsheetId, userID, username string) error {
 
 //////
 
-func AddReadingMinutes(spreadsheetId, userID string, minutes int, currentTime time.Time) error {
+func AddReadingMinutes(spreadsheetId, userID string, minutes int, currentTime1 time.Time) error {
+	currentTime := time.Now()
+	currentTime = currentTime.Add(5 * time.Hour)
 	sheetName := GetSheetname(currentTime)
 
 	LoadConfig()
@@ -189,6 +192,7 @@ func AddReadingMinutes(spreadsheetId, userID string, minutes int, currentTime ti
 
 func DeleteUserFromSheet(spreadsheetId, userID string) error {
 	currentTime := time.Now()
+	currentTime = currentTime.Add(5 * time.Hour)
 	sheetName := GetSheetname(currentTime)
 
 	creds := Creds
