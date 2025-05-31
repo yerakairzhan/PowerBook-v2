@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"golang.org/x/oauth2/google"
 	"google.golang.org/api/sheets/v4"
+	"log"
 	"strconv"
 	"strings"
 	"time"
@@ -88,7 +89,7 @@ func AddUserToSheet(spreadsheetId, userID, username string) error {
 	}
 
 	// Define the range (Sheet name and columns)
-	appendRange := fmt.Sprintf("'%s'!A:B", sheetName)
+	appendRange := fmt.Sprintf("%s!A:B", sheetName)
 	valueRange := &sheets.ValueRange{
 		Values: values,
 	}
@@ -96,6 +97,7 @@ func AddUserToSheet(spreadsheetId, userID, username string) error {
 	// Append the data to the sheet
 	_, err = service.Spreadsheets.Values.Append(spreadsheetId, appendRange, valueRange).ValueInputOption("RAW").Do()
 	if err != nil {
+		log.Println(err, "rpoblem")
 		return fmt.Errorf("Error appending data to sheet: %v", err)
 	}
 
