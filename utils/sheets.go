@@ -88,7 +88,7 @@ func AddUserToSheet(spreadsheetId, userID, username string) error {
 	}
 
 	// Define the range (Sheet name and columns)
-	appendRange := fmt.Sprintf("%s!A:B", sheetName)
+	appendRange := fmt.Sprintf("'%s'!A:B", sheetName)
 	valueRange := &sheets.ValueRange{
 		Values: values,
 	}
