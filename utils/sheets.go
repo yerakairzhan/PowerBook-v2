@@ -104,8 +104,6 @@ func AddUserToSheet(spreadsheetId, userID, username string) error {
 	return nil
 }
 
-//////
-
 func AddReadingMinutes(spreadsheetId, userID string, minutes int, currentTime1 time.Time) error {
 	currentTime := currentTime1.Add(5 * time.Hour)
 	sheetName := GetSheetname(currentTime)
