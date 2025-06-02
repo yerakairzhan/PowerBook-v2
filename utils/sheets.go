@@ -59,7 +59,7 @@ func GetSheetname(time time.Time) string {
 
 func AddUserToSheet(spreadsheetId, userID, username string) error {
 	currentTime := time.Now()
-	//currentTime = currentTime.Add(5 * time.Hour)
+	currentTime = currentTime.Add(5 * time.Hour)
 	sheetName := GetSheetname(currentTime)
 
 	creds := Creds
@@ -107,8 +107,7 @@ func AddUserToSheet(spreadsheetId, userID, username string) error {
 //////
 
 func AddReadingMinutes(spreadsheetId, userID string, minutes int, currentTime1 time.Time) error {
-	currentTime := time.Now()
-	//currentTime = currentTime.Add(5 * time.Hour)
+	currentTime := currentTime1.Add(5 * time.Hour)
 	sheetName := GetSheetname(currentTime)
 
 	LoadConfig()
