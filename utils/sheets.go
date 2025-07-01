@@ -191,7 +191,6 @@ func AddReadingMinutes(spreadsheetId, userID string, minutes int, currentTime1 t
 
 func DeleteUserFromSheet(spreadsheetId, userID string) error {
 	currentTime := time.Now()
-	//currentTime = currentTime.Add(5 * time.Hour)
 	sheetName := GetSheetname(currentTime)
 
 	creds := Creds
@@ -200,39 +199,34 @@ func DeleteUserFromSheet(spreadsheetId, userID string) error {
 	}
 	credsBytes := []byte(creds)
 
-	// Creating JWT-based config
 	config, err := google.JWTConfigFromJSON(credsBytes, sheets.SpreadsheetsScope)
 	if err != nil {
 		return fmt.Errorf("Error loading JWT config: %v", err)
 	}
 
-	// Creating HTTP client with JWT credentials
 	client := config.Client(context.Background())
 
-	// Creating Sheets service
 	service, err := sheets.NewService(context.Background(), option.WithHTTPClient(client))
 	if err != nil {
 		return fmt.Errorf("Error connecting to Sheets API: %v", err)
 	}
 
-	// Define the range to read all rows
 	readRange := fmt.Sprintf("%s!A:B", sheetName)
 	resp, err := service.Spreadsheets.Values.Get(spreadsheetId, readRange).Do()
 	if err != nil {
 		return fmt.Errorf("Error reading data from sheet: %v", err)
 	}
 
-	// Find the row index containing the userID
-	var rowIndex int = -1
+	rowIndex := -1
 	for i, row := range resp.Values {
 		if len(row) > 0 && row[0] == userID {
-			rowIndex = i + 1 // Sheets API uses 1-based indexing
+			rowIndex = i + 1 // 1-based indexing for values API
 			break
 		}
 	}
 
 	if rowIndex == -1 {
-		return fmt.Errorf("User ID not found in sheet")
+		return fmt.Errorf("User ID '%s' not found in sheet '%s'", userID, sheetName)
 	}
 
 	spreadsheet, err := service.Spreadsheets.Get(spreadsheetId).Do()
@@ -240,7 +234,7 @@ func DeleteUserFromSheet(spreadsheetId, userID string) error {
 		return fmt.Errorf("Error retrieving spreadsheet details: %v", err)
 	}
 
-	var sheetId int64
+	sheetId := int64(-1)
 	for _, sheet := range spreadsheet.Sheets {
 		if sheet.Properties.Title == sheetName {
 			sheetId = sheet.Properties.SheetId
@@ -248,15 +242,18 @@ func DeleteUserFromSheet(spreadsheetId, userID string) error {
 		}
 	}
 
-	// Delete the entire row by shifting rows up
+	if sheetId == -1 {
+		return fmt.Errorf("Sheet '%s' not found in spreadsheet", sheetName)
+	}
+
 	deleteRequest := &sheets.BatchUpdateSpreadsheetRequest{
 		Requests: []*sheets.Request{
 			{
 				DeleteDimension: &sheets.DeleteDimensionRequest{
 					Range: &sheets.DimensionRange{
-						SheetId:    sheetId, // You might need to get the actual Sheet ID
+						SheetId:    sheetId,
 						Dimension:  "ROWS",
-						StartIndex: int64(rowIndex - 1), // Sheets API uses 0-based index here
+						StartIndex: int64(rowIndex - 1),
 						EndIndex:   int64(rowIndex),
 					},
 				},
